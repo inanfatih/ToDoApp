@@ -7,3 +7,30 @@
 //
 
 import Foundation
+
+class ToDoItem{
+    var itemTitle: String
+    var itemDesc: String
+    var done: Bool
+
+    
+    public init(itemTitle:String, itemDesc: String)
+    {
+        self.itemTitle = itemTitle
+        self.itemDesc = itemDesc
+        self.done = false
+    }
+    
+
+}
+
+extension ToDoItem
+{
+    public class func getMockData() -> [ToDoItem]
+    {
+        return [
+            ToDoItem(itemTitle: "Milk", itemDesc: "milk description"),
+            ToDoItem(itemTitle: "Chocolate", itemDesc: "chocolate description")
+        ]
+    }
+}
