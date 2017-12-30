@@ -10,7 +10,7 @@ import UIKit
 
 class ViewController: UITableViewController {
 
-    private var toDoItems = ToDoItem.getMockData()
+    private var toDoItems = [ToDoItem]()
     
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
@@ -57,7 +57,45 @@ class ViewController: UITableViewController {
         self.title = "ToDo App"
         //        tableView.backgroundColor = UIColor.red
         tableView.tintColor  = UIColor.red
+        
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(ViewController.didTapAddItemButton(_:)))
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(UIApplicationDelegate.applicationDidEnterBackground(_:)),
+            name: NSNotification.Name.UIApplicationDidEnterBackground,
+            object: nil)
+        
+        do
+        {
+
+            self.toDoItems = try [ToDoItem].readFromPersistence()
+        }
+        catch let error as NSError
+        {
+            if error.domain == NSCocoaErrorDomain && error.code == NSFileReadNoSuchFileError
+            {
+                NSLog("No persistence file found, not necesserially an error...")
+            }
+            else
+            {
+                let alert = UIAlertController(
+                    title: "Error",
+                    message: "Could not load the to-do items!",
+                    preferredStyle: .alert)
+                
+                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                
+                self.present(alert, animated: true, completion: nil)
+                
+                NSLog("Error loading from persistence: \(error)")
+            }
+        }
     }
+
+        
+        
+    
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -69,5 +107,57 @@ class ViewController: UITableViewController {
         let header = view as! UITableViewHeaderFooterView
         header.textLabel?.textColor = UIColor.white
     }
+    
+    @objc func didTapAddItemButton(_ sender: UIBarButtonItem)
+    {
+     let alert = UIAlertController(
+        title:"New To Do Item",
+        message: "Insert the title of the new to do item",
+        preferredStyle: .alert
+        )
+        
+        alert.addTextField(configurationHandler: nil)
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { (_) in
+            if let title = alert.textFields?[0].text
+            {
+                self.addNewToDoItem(title: title)
+            }
+        }))
+        self.present(alert, animated: true, completion: nil)
+    }
+    
+    private func addNewToDoItem (title:String){
+    
+        let newIndex = toDoItems.count
+        
+        toDoItems.append(ToDoItem(itemTitle: title, itemDesc: title))
+        
+        tableView.insertRows(at: [IndexPath(row: newIndex, section: 0)], with: .top)
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if indexPath.row < toDoItems.count
+        {
+            toDoItems.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .top)
+        }
+    }
+    
+    
+    @objc public func applicationDidEnterBackground(_ notification: NSNotification)
+    {
+        do{
+            try toDoItems.writeToPersistence()
+        }
+        catch let error
+        {
+            NSLog("Error writing to persistence: \(error)")
+            
+        }
+        
+    }
+    
+    
 }
 
